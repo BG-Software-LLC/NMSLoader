@@ -1,0 +1,105 @@
+plugins {
+    id 'java'
+    id 'com.github.johnrengelman.shadow' version '7.1.2'
+    id 'maven-publish'
+}
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(8))
+    }
+}
+
+group 'NMSLoader'
+
+project.ext {
+    targetFolder = file("target/")
+    buildVersion = System.getenv("BUILD_NUMBER") == null ? "Unknown" : "b" + System.getenv("BUILD_NUMBER")
+}
+
+allprojects {
+    apply plugin: 'java'
+    apply plugin: 'com.github.johnrengelman.shadow'
+
+    repositories {
+        maven { url 'https://repo.bg-software.com/repository/nms/' }
+        maven { url 'https://repo.bg-software.com/repository/common/' }
+    }
+
+    dependencies {
+        compileOnly "org.spigotmc:v1_8_R3-Taco:latest"
+    }
+
+    task checkDebug() {
+        Set<File> filesWithDebug = fileTree('src/main/java').filter { file ->
+            file.text.contains('Bukkit.broadcastMessage')
+        }.getFiles()
+
+        if (!filesWithDebug.isEmpty())
+            throw new GradleException("Found debug messages: " + filesWithDebug)
+    }
+
+    build {
+        dependsOn checkDebug
+        dependsOn shadowJar
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compileOnly 'com.bgsoftware.common.reflection:ReflectionUtils:1.0.2'
+    compileOnly 'com.bgsoftware.common.annotations:Annotations:b2'
+    compileOnly "org.spigotmc:v1_8_R3-Taco:latest"
+}
+
+shadowJar {
+    dependsOn(jar)
+
+    archiveFileName = rootProject.name + "-" + rootProject.buildVersion + ".jar"
+
+    delete fileTree(rootProject.targetFolder.getAbsolutePath())
+
+    exclude '*exclude.jar'
+
+    destinationDirectory = rootProject.targetFolder
+    from sourceSets.getByName("main").output
+    configurations = [project.configurations.getByName("runtimeClasspath")]
+}
+
+build {
+    dependsOn shadowJar
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = 'com.bgsoftware.common.nmsloader'
+            artifactId = 'NMSLoader'
+            version = rootProject.buildVersion
+
+            from components.java
+        }
+    }
+
+    repositories {
+        String mavenUsername = System.getenv('mavenUsername');
+        String mavenPassword = System.getenv('mavenPassword');
+
+        if (mavenUsername != null && mavenPassword != null) {
+            maven {
+                url 'https://repo.bg-software.com/repository/common/'
+                credentials {
+                    username mavenUsername
+                    password mavenPassword
+                }
+            }
+        }
+    }
+}
+
+publish.shouldRunAfter shadowJar
+shadowJar.shouldRunAfter build
+build.shouldRunAfter subprojects.build
