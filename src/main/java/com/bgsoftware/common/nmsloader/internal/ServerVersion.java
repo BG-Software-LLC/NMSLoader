@@ -31,12 +31,11 @@ public enum ServerVersion {
     }
 
     private static ServerVersion findCurrentVersion() {
-        String version = Bukkit.getServer().getClass().getPackage().getName().split("\\.")[3];
-        String[] sections = version.split("_");
+        String[] sections = bukkitVersion.split("\\.");
 
         ServerVersion currentVersion;
         try {
-            currentVersion = valueOf(sections[0] + "_" + sections[1]);
+            currentVersion = ServerVersion.valueOf("v" + sections[0] + "_" + sections[1]);
         } catch (IllegalArgumentException error) {
             currentVersion = UNKONWN;
         }
