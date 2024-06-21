@@ -1,5 +1,7 @@
 package com.bgsoftware.common.nmsloader;
 
+import com.bgsoftware.common.nmsloader.config.NMSConfiguration;
+import com.bgsoftware.common.nmsloader.internal.NMSLoaderContext;
 import com.bgsoftware.common.nmsloader.internal.NMSVersionRequirement;
 import com.bgsoftware.common.nmsloader.internal.ServerVersion;
 import com.bgsoftware.common.nmsloader.method.BuiltinNMSHandlersFactoryMethod;
@@ -11,6 +13,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.UnsafeValues;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.List;
 
@@ -22,12 +25,22 @@ public class NMSHandlersFactory {
             CachedNMSHandlersFactoryMethod.getInstance(),
     };
 
-    public static INMSLoader createNMSLoader(JavaPlugin plugin) throws NMSLoadException {
-        String nmsPackageVersionName = getNMSPackageVersionName(plugin);
+    public static INMSLoader createNMSLoader(JavaPlugin plugin, NMSConfiguration configuration) throws NMSLoadException {
+        return createNMSLoader(plugin, configuration, null);
+    }
+
+    public static INMSLoader createNMSLoader(JavaPlugin plugin, NMSConfiguration configuration, @Nullable ClassLoader classLoader) throws NMSLoadException {
+        String nmsPackageVersionName = getNMSPackageVersionName();
+
+        NMSLoaderContext context = new NMSLoaderContext.Builder()
+                .setPlugin(plugin)
+                .setConfiguration(configuration)
+                .setClassLoader(classLoader)
+                .build();
 
         for (INMSHandlersFactoryMethod method : NMS_FACTORY_METHODS) {
             try {
-                return method.createNMSLoader(plugin, nmsPackageVersionName);
+                return method.createNMSLoader(context, nmsPackageVersionName);
             } catch (NMSLoadException error) {
                 // Ignore
             }
@@ -37,11 +50,11 @@ public class NMSHandlersFactory {
     }
 
     @SuppressWarnings("deprecation")
-    private static String getNMSPackageVersionName(JavaPlugin plugin) throws NMSLoadException {
+    private static String getNMSPackageVersionName() throws NMSLoadException {
         String nmsPackageVersion = null;
 
         if (ServerVersion.isLessThan(ServerVersion.v1_17)) {
-            nmsPackageVersion = plugin.getServer().getClass().getPackage().getName().split("\\.")[3];
+            nmsPackageVersion = Bukkit.getServer().getClass().getPackage().getName().split("\\.")[3];
         } else {
             ReflectMethod<Integer> getDataVersion = new ReflectMethod<>(UnsafeValues.class, "getDataVersion");
             int dataVersion = getDataVersion.invoke(Bukkit.getUnsafe());

@@ -2,7 +2,9 @@ package com.bgsoftware.common.nmsloader.method;
 
 import com.bgsoftware.common.nmsloader.INMSLoader;
 import com.bgsoftware.common.nmsloader.NMSLoadException;
+import com.bgsoftware.common.nmsloader.config.NMSConfiguration;
 import com.bgsoftware.common.nmsloader.internal.BaseNMSLoader;
+import com.bgsoftware.common.nmsloader.internal.NMSLoaderContext;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class BuiltinNMSHandlersFactoryMethod implements INMSHandlersFactoryMethod {
@@ -18,43 +20,36 @@ public class BuiltinNMSHandlersFactoryMethod implements INMSHandlersFactoryMetho
     }
 
     @Override
-    public INMSLoader createNMSLoader(JavaPlugin plugin, String nmsPackageVersionName) throws NMSLoadException {
-        String pluginPackageName = getPluginPackageFromClass(plugin.getClass());
+    public INMSLoader createNMSLoader(NMSLoaderContext context, String nmsPackageVersionName) throws NMSLoadException {
+        ClassLoader classLoader = context.getClassLoader();
+        if (classLoader == null)
+            classLoader = context.getPlugin().getClass().getClassLoader();
 
-        String nmsResourcePackagePath = String.format("com/bgsoftware/%s/nms/%s", pluginPackageName, nmsPackageVersionName);
+        NMSConfiguration configuration = context.getConfiguration();
 
-        if (plugin.getClass().getClassLoader().getResource(nmsResourcePackagePath) == null)
+        String nmsResourcePackagePath = configuration.getNMSResourcePathForVersion(nmsPackageVersionName);
+
+        if (classLoader.getResource(nmsResourcePackagePath) == null)
             throw new NMSLoadException("Cannot find nms package in plugin");
 
-        return new BuiltinNMSLoader(plugin, pluginPackageName, nmsPackageVersionName);
-    }
-
-    private String getPluginPackageFromClass(Class<?> nmsClass) throws NMSLoadException {
-        String[] pathClassSections = nmsClass.getName().split("\\.");
-
-        if (pathClassSections.length < 3 || !pathClassSections[0].equals("com") ||
-                !pathClassSections[1].equals("bgsoftware")) {
-            throw new NMSLoadException("Class is not under the com.bgsoftware package: " + nmsClass.getName());
-        }
-
-        return pathClassSections[2];
+        return new BuiltinNMSLoader(context.getPlugin(), configuration, nmsPackageVersionName);
     }
 
     private static class BuiltinNMSLoader extends BaseNMSLoader {
 
-        private final String pluginPackageName;
+        private final NMSConfiguration configuration;
         private final String nmsPackageVersion;
 
-        BuiltinNMSLoader(JavaPlugin plugin, String pluginPackageName, String nmsPackageVersion) {
+        BuiltinNMSLoader(JavaPlugin plugin, NMSConfiguration configuration, String nmsPackageVersion) {
             super(plugin);
-            this.pluginPackageName = pluginPackageName;
+            this.configuration = configuration;
             this.nmsPackageVersion = nmsPackageVersion;
         }
 
         @Override
         protected Class<?> findImplementationClass(Class<?> nmsClass) throws NMSLoadException {
-            String nmsHandlerClass = String.format("com.bgsoftware.%s.nms.%s.%s",
-                    pluginPackageName, this.nmsPackageVersion, nmsClass.getSimpleName() + "Impl");
+            String nmsHandlerClass = this.configuration.getPackagePathForNMSHandler(
+                    this.nmsPackageVersion, nmsClass.getSimpleName());
 
             try {
                 return Class.forName(nmsHandlerClass);

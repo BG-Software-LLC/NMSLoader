@@ -3,10 +3,10 @@ package com.bgsoftware.common.nmsloader.method;
 import com.bgsoftware.common.annotations.Nullable;
 import com.bgsoftware.common.nmsloader.INMSLoader;
 import com.bgsoftware.common.nmsloader.NMSLoadException;
+import com.bgsoftware.common.nmsloader.internal.NMSLoaderContext;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
-import org.bukkit.plugin.java.JavaPlugin;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.BufferedReader;
@@ -37,8 +37,8 @@ public class RemoteNMSHandlersFactoryMethod implements INMSHandlersFactoryMethod
     }
 
     @Override
-    public INMSLoader createNMSLoader(JavaPlugin plugin, String nmsPackageVersionName) throws NMSLoadException {
-        File cacheFolder = new File(plugin.getDataFolder(), ".cache");
+    public INMSLoader createNMSLoader(NMSLoaderContext context, String nmsPackageVersionName) throws NMSLoadException {
+        File cacheFolder = context.getConfiguration().getCacheFolder();
         String version = null;
 
         if (cacheFolder.exists()) {
