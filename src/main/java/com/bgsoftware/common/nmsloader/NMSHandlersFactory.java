@@ -53,10 +53,10 @@ public class NMSHandlersFactory {
                     new NMSVersionRequirement(2975, "v1_18"),
                     new NMSVersionRequirement(3336, null),
                     new NMSVersionRequirement(3337, "v1_19"),
-                    new NMSVersionRequirement(3465, "v1_20_1"),
-                    new NMSVersionRequirement(3578, "v1_20_2"),
+                    new NMSVersionRequirement(3699, null),
                     new NMSVersionRequirement(3700, "v1_20_3"),
-                    new NMSVersionRequirement(3839, "v1_20_4")
+                    new NMSVersionRequirement(3839, "v1_20_4"),
+                    new NMSVersionRequirement(3953, "v1_21")
             );
 
             for (NMSVersionRequirement versionData : versions) {
