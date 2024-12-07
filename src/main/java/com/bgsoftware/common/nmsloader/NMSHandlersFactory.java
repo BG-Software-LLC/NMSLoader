@@ -70,7 +70,8 @@ public class NMSHandlersFactory {
                     new NMSVersionRequirement(3700, "v1_20_3"),
                     new NMSVersionRequirement(3839, "v1_20_4"),
                     new NMSVersionRequirement(3955, "v1_21"),
-                    new NMSVersionRequirement(4082, "v1_21_3")
+                    new NMSVersionRequirement(4082, "v1_21_3"),
+                    new NMSVersionRequirement(4189, "v1_21_4")
             );
 
             for (NMSVersionRequirement versionData : versions) {
