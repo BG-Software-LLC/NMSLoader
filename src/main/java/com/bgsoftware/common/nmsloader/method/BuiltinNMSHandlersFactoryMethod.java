@@ -32,18 +32,20 @@ public class BuiltinNMSHandlersFactoryMethod implements INMSHandlersFactoryMetho
         if (classLoader.getResource(nmsResourcePackagePath) == null)
             throw new NMSLoadException("Cannot find nms package in plugin");
 
-        return new BuiltinNMSLoader(context.getPlugin(), configuration, nmsPackageVersionName);
+        return new BuiltinNMSLoader(context.getPlugin(), classLoader, configuration, nmsPackageVersionName);
     }
 
     private static class BuiltinNMSLoader extends BaseNMSLoader {
 
         private final NMSConfiguration configuration;
         private final String nmsPackageVersion;
+        private final ClassLoader classLoader;
 
-        BuiltinNMSLoader(JavaPlugin plugin, NMSConfiguration configuration, String nmsPackageVersion) {
+        BuiltinNMSLoader(JavaPlugin plugin, ClassLoader classLoader, NMSConfiguration configuration, String nmsPackageVersion) {
             super(plugin);
             this.configuration = configuration;
             this.nmsPackageVersion = nmsPackageVersion;
+            this.classLoader = classLoader;
         }
 
         @Override
@@ -52,7 +54,7 @@ public class BuiltinNMSHandlersFactoryMethod implements INMSHandlersFactoryMetho
                     this.nmsPackageVersion, nmsClass.getSimpleName());
 
             try {
-                return Class.forName(nmsHandlerClass);
+                return this.classLoader.loadClass(nmsHandlerClass);
             } catch (ClassNotFoundException error) {
                 throw new NMSLoadException("Failed to load nms handler for class " + nmsHandlerClass, error);
             }
