@@ -4,6 +4,7 @@ import com.bgsoftware.common.nmsloader.NMSLoadException;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
+import java.io.InputStream;
 
 public abstract class NMSConfiguration {
 
@@ -21,19 +22,23 @@ public abstract class NMSConfiguration {
 
     public abstract File getCacheFolder();
 
+    public abstract InputStream getResource(String path);
+
     private static class PluginNMSConfiguration extends NMSConfiguration {
 
+        private final JavaPlugin plugin;
         private final String pluginPackageName;
         private final File cacheFolder;
 
         PluginNMSConfiguration(JavaPlugin plugin) throws NMSLoadException {
+            this.plugin = plugin;
             this.pluginPackageName = getPluginPackageFromClass(plugin.getClass());
             this.cacheFolder = new File(plugin.getDataFolder(), ".cache");
         }
 
         @Override
         public String getNMSResourcePathForVersion(String nmsVersionName) {
-            return String.format("com/bgsoftware/%s/nms/%s", this.pluginPackageName, nmsVersionName);
+            return String.format("nms/%s", nmsVersionName);
         }
 
         @Override
@@ -45,6 +50,11 @@ public abstract class NMSConfiguration {
         @Override
         public File getCacheFolder() {
             return this.cacheFolder;
+        }
+
+        @Override
+        public InputStream getResource(String path) {
+            return this.plugin.getResource(path);
         }
 
     }
