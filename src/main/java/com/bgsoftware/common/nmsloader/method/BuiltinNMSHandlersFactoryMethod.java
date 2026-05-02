@@ -85,6 +85,7 @@ public class BuiltinNMSHandlersFactoryMethod implements INMSHandlersFactoryMetho
                 cacheFolder.mkdirs();
 
             File nmsVersionFile = new File(cacheFolder, this.nmsPackageVersion + ".jar");
+            Path nmsVersionPath = nmsVersionFile.toPath();
 
             if (nmsVersionFile.exists())
                 nmsVersionFile.delete();
@@ -92,23 +93,19 @@ public class BuiltinNMSHandlersFactoryMethod implements INMSHandlersFactoryMetho
             try {
                 String nmsResourceName = this.configuration.getNMSResourcePathForVersion(this.nmsPackageVersion);
 
-                Path tempJarPath = Files.createTempFile("nms-", ".jar");
                 try (InputStream inputStream = this.configuration.getResource(nmsResourceName)) {
-                    Files.copy(inputStream, tempJarPath, StandardCopyOption.REPLACE_EXISTING);
+                    Files.copy(inputStream, nmsVersionPath, StandardCopyOption.REPLACE_EXISTING);
                 }
-                tempJarPath.toFile().deleteOnExit();
-
-                Path remappedJarPath = Remapper.remap(tempJarPath);
-
-                if (remappedJarPath == null) {
-                    // Jar was not remapped, let's just move the file to the destination
-                    tempJarPath.toFile().renameTo(nmsVersionFile);
-                } else {
-                    // Jar was remapped, move the remapped to the destination
-                    remappedJarPath.toFile().renameTo(nmsVersionFile);
-                }
-
                 nmsVersionFile.deleteOnExit();
+
+                Path remappedJarPath = Remapper.remap(nmsVersionPath);
+
+                if (remappedJarPath != null) {
+                    // Jar was remapped, move the remapped to the destination
+                    if (!remappedJarPath.toFile().renameTo(nmsVersionFile))
+                        throw new IOException("Failed to rename " + remappedJarPath + " to " + nmsVersionPath);
+                    nmsVersionFile.deleteOnExit();
+                }
 
                 return new JarClassLoader(nmsVersionFile, parentClassLoader);
             } catch (IOException error) {
