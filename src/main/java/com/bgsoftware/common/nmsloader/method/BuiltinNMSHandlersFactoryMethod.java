@@ -102,8 +102,7 @@ public class BuiltinNMSHandlersFactoryMethod implements INMSHandlersFactoryMetho
 
                 if (remappedJarPath != null) {
                     // Jar was remapped, move the remapped to the destination
-                    if (!remappedJarPath.toFile().renameTo(nmsVersionFile))
-                        throw new IOException("Failed to rename " + remappedJarPath + " to " + nmsVersionPath);
+                    Files.move(remappedJarPath, nmsVersionPath, StandardCopyOption.REPLACE_EXISTING);
                     nmsVersionFile.deleteOnExit();
                 }
 
